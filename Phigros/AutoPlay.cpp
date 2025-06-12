@@ -84,7 +84,7 @@ class EventGenerate {
                     auto last_iter = start;
                     while(iter != m_end) {
                         if((std::abs(iter->positionX() - last_iter->positionX())) > max_cmp_x / 2.0f) {
-                            float local_time = last_iter->realTime() + (last_iter->realTime() - iter->realTime()) / 2.0f;
+                            float local_time = last_iter->realTime() + (iter->realTime() - last_iter->realTime()) / 2.0f;
                             float local_x = (iter->positionX() - last_iter->positionX()) / 2.0f;
                             fevent->add((last_iter->positionX() + local_x), local_time);
                         }
@@ -162,7 +162,7 @@ Vector2 LinePosControl::get_pos() {
         return Vector2(start->end(), start->end2());
     } else {
         float duration = start->endTime() - start->startTime();
-        float t = (m_time - start->startTime()) / duration; //归一化时间 [0, 1]
+        float t = std::clamp((m_time - start->startTime()) / duration, 0.0f, 1.0f); //归一化时间 [0, 1]
         float x = start->start() + t * (start->end() - start->start());
         float y = start->start2() + t * (start->end2() - start->start2());
         return Vector2(x, y);
@@ -275,6 +275,7 @@ void AutoPlay::Update(float time) {
     for(auto& line : m_lineposc)
         line.update_index(time);
     
+    //处理连续的flick键
     if(m_recvPos->has_message()) {
         const auto& data = m_recvPos->get_message();
         if(time >= data.time)

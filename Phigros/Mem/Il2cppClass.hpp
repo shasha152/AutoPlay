@@ -137,6 +137,8 @@ class Il2ObjectArray : public Array<OffsetStruct> {
         }
         return *this;
     }
+    
+    
     explicit Il2ObjectArray(uintptr_t addr) {
         refresh(addr);
     }

@@ -1,5 +1,6 @@
 #include "Phigros.h"
 #include "AutoPlay.h"
+#include "OtherPlay.h"
 
 #include <chrono>
 #include <iostream>
@@ -11,6 +12,7 @@ using namespace Mem;
 inline Touch::TouchSrceen touch = -1;
 inline constexpr double TARGET_FPS = 400.0;
 inline constexpr std::chrono::duration<double, std::milli> FRAME_TIME(1000.0 / TARGET_FPS);
+
 
 void PhigrosBase::init(uintptr_t array_addr) {
     assembly.parse(array_addr);
@@ -39,6 +41,51 @@ uintptr_t PhigrosBase::GetUString(const std::u16string& str) {
 
 void PhigrosBase::set_addr(uintptr_t addr) noexcept { m_addr = addr; }
 
+inline void PlayFor(AutoPlay *auto_play) {
+    std::unique_ptr<LevelControl> level;
+    
+    std::cout << "进入谱子 回车刷新<----";
+    std::cin.get();
+        
+    auto object = PhigrosBase::FindObjects<uintptr_t>(u"LevelControl,Assembly-CSharp");
+    if(object.empty()) {
+        std::cout << "未进入谱子\n";
+        return;
+    }
+    level.reset(new LevelControl());
+    level->set_addr(object.at(0)); 
+    level->update();
+        
+    auto_play->setTargetLevel(level.get());
+    auto_play->CreateSongEvent();
+        
+    std::cout << "数据获取成功\n";
+    auto prev_time = std::chrono::high_resolution_clock::now();
+    bool is_run = true;
+    while(is_run) {
+        auto current_time = std::chrono::high_resolution_clock::now();
+        auto elapsed_time = current_time - prev_time;
+        auto remaining_time = FRAME_TIME - elapsed_time;
+            
+        //降低cpu占用率
+        if(remaining_time > std::chrono::milliseconds(0)) {
+            std::this_thread::sleep_for(remaining_time);
+        }
+        level->update();
+        is_run = auto_play->Play();
+        prev_time = current_time;
+    }
+    auto_play->Destroy();
+}
+
+inline void UnlockAll(OtherPlay* play) {
+    play->openUnlockSong();
+}
+
+inline void MyMoney(OtherPlay* play) {
+    play->setMoney(5201314);
+}
+
 void Init(const char *package) {
     if(Mem::init(package) == 0)
         throw std::runtime_error("未找到pid");
@@ -47,50 +94,45 @@ void Init(const char *package) {
     uintptr_t il2cpp = get_module_base("libil2cpp.so", 2);
     rw.read(il2cpp + 0x700518, &il2cpp, 8);
     PhigrosBase::init(il2cpp);
-    
+    std::cout << "\033[92;40;5m";
     std::cout << "点击一下屏幕\n";
     touch = Touch::Create();
     
     std::cout << "初始化成功\n";
 }
 
-void Run() {
-    std::unique_ptr<LevelControl> level;
-    auto auto_play = std::make_unique<AutoPlay>(touch);
+int Menu() {
+    int type = 0;
+    std::cout << "\033[34;40;5m";
+    std::cout << "1.自动打歌\n2.解锁歌曲\n3.无限Money\n0.退出\n";
+    std::cout << "输入选项: ";
+    std::cin >> type;
+    std::cin.clear();
+    std::cin.ignore(10000, '\n');
     
-    while(true) {
-        std::cout << "进入谱子 回车刷新<----";
-        std::cin.get();
-        
-        auto object = PhigrosBase::FindObjects<uintptr_t>(u"LevelControl,Assembly-CSharp");
-        if(object.empty()) {
-            std::cout << "未进入谱子\n";
-            continue;
+    return type;
+}
+
+void Run() {
+    auto other = std::make_unique<OtherPlay>();
+    auto auto_play = std::make_unique<AutoPlay>(touch);
+    other->update();
+    
+    bool is_run = true;
+    while(is_run) {
+        int type = Menu();
+        switch(type) {
+            case 0:
+                is_run = false; break;
+            case 1:
+                PlayFor(auto_play.get()); break;
+            case 2:
+                UnlockAll(other.get()); break;
+            case 3:
+                MyMoney(other.get()); break;
+            default:
+                std::cout << "输入错误\n";
         }
-        level.reset(new LevelControl());
-        level->set_addr(object.at(0)); 
-        level->update();
-        
-        auto_play->setTargetLevel(level.get());
-        auto_play->CreateSongEvent();
-        
-        std::cout << "数据获取成功\n";
-        auto prev_time = std::chrono::high_resolution_clock::now();
-        bool is_run = true;
-        while(is_run) {
-            auto current_time = std::chrono::high_resolution_clock::now();
-            auto elapsed_time = current_time - prev_time;
-            auto remaining_time = FRAME_TIME - elapsed_time;
-            
-            //降低cpu占用率
-            if(remaining_time > std::chrono::milliseconds(0)) {
-                std::this_thread::sleep_for(remaining_time);
-            }
-            level->update();
-            is_run = auto_play->Play();
-            prev_time = current_time;
-        }
-        auto_play->Destroy();
     }
 }
 

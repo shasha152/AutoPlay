@@ -42,7 +42,7 @@ class sendMessage {
     
   public:
     sendMessage(std::shared_ptr<recvMessage<T>>&);
-    T get() const;
+    const T& get() const;
     
     void send(float, const T&);
 };
@@ -88,9 +88,10 @@ void sendMessage<T>::send(float key, const T& data) {
 }
 
 template<typename T>
-T sendMessage<T>::get() const {
+const T& sendMessage<T>::get() const {
     std::unique_lock<std::mutex> lock(m_recv->mutex);
     m_recv->condition.wait(lock, [this](){
+        std::this_thread::yield();
         return m_mg->is_finish.load(std::memory_order_acquire);
     });
     
