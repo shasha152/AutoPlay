@@ -6,6 +6,8 @@
 #include "Reader.hpp"
 #include "DataRef.hpp"
 
+#include <iostream>
+
 //这里我感觉写成答辩了
 
 namespace Mem {
@@ -307,21 +309,16 @@ class Il2Assembly : public __MyIl2cppBase<Il2Offset> {
     Il2Assembly& parse(uintptr_t array_addr) {
         PointerType addr;
         vNormalRw rw;
-        for(size_t i = 0;; i++) {
+        for(size_t i = 0; i < 20000; i++) {
             rw.read(array_addr + i * 8, &addr, sizeof(addr));
-            if(addr == 0) {
-                if(__classes().find("Assembly-CSharp.dll") == __classes().end())
-                    continue;
-                break;
-            }
+            if(addr == 0) continue;
             std::string _name;
             ReadString(rw.read<uintptr_t>(rw.read<uintptr_t>(addr)), 
                 _name, rw);
             auto iter = __classes().find(_name);
-            
             if(iter == __classes().end()) {
                 if(_name.find(".dll") == std::string::npos) {
-                    throw std::runtime_error("Il2Assembly parse : 错误");
+                    break;
                 }
                 __classes().emplace(std::move(_name), vIl2Class_t{}).
                     first->second.

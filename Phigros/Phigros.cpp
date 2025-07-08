@@ -92,7 +92,7 @@ void Init(const char *package) {
     vNormalRw rw;
     
     uintptr_t il2cpp = get_module_base("libil2cpp.so", 2);
-    rw.read(il2cpp + 0x700518, &il2cpp, 8);
+    rw.read(il2cpp + 0x6E9600, &il2cpp, 8);
     PhigrosBase::init(il2cpp);
     std::cout << "\033[92;40;5m";
     std::cout << "点击一下屏幕\n";
