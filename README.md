@@ -25,4 +25,5 @@ void Init(const char *package) {
 ```
 
 2.如果是未找到类，在启动一次程序
+
 3.要是以上都没解决问题告知我
