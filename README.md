@@ -6,7 +6,7 @@ Phigros自动打歌，主要由Android模拟触摸和读写内存实现
 解锁歌曲和无限Money
 
 # 遇到错误
-1.如果你无法使用，可能是Il2Class数组偏移发生了变法，修改rw.read(il2cpp + [新的偏移], &il2cpp, 8)
+1.如果你无法使用，可能是Il2Class数组偏移发生了变法，修改Phigros.cpp的init函数rw.read(il2cpp + [新的偏移], &il2cpp, 8)
 ```c++
 void Init(const char *package) {
     if(Mem::init(package) == 0)
