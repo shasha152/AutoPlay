@@ -61,13 +61,14 @@ template<typename T>
 template<typename Fun, typename... Args>
 void recvMessage<T>::handle(Fun fun, Args&&... args) {
     auto Vec2 = fun(std::forward<Args>(args)...);
-    std::unique_lock<std::mutex> lock(mutex);
     
+    std::unique_lock<std::mutex> lock(mutex);
     auto& ms = m_pos_mes.begin()->second;
     ms->pos = Vec2;
     ms->is_finish.store(true);
-    condition.notify_all();
+    
     m_pos_mes.erase(m_pos_mes.begin());
+    condition.notify_all();
 }
 
 
@@ -84,14 +85,12 @@ void sendMessage<T>::send(float key, const T& data) {
     std::unique_lock<std::mutex> lock(m_recv->mutex);
     m_recv->m_pos_mes.emplace(key, m_mg);
     
-    
 }
 
 template<typename T>
 const T& sendMessage<T>::get() const {
     std::unique_lock<std::mutex> lock(m_recv->mutex);
     m_recv->condition.wait(lock, [this](){
-        std::this_thread::yield();
         return m_mg->is_finish.load(std::memory_order_acquire);
     });
     

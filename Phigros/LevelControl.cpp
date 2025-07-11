@@ -19,7 +19,7 @@ Il2cppClass& AtClass(Dlls& dll, const std::string& klass, const std::string& nam
     return mclass;
 }
 
-void __Il2OffsetValueFieldSet(Mem::OffsetValue<int>* offval, Il2cppClass& klass) {}
+void __Il2OffsetValueFieldSet(Mem::OffsetValue<int>*, Il2cppClass&) {}
 
 template<typename T, typename... Args>
 void __Il2OffsetValueFieldSet(Mem::OffsetValue<int>* offval, Il2cppClass& klass, T one, Args... fields) {

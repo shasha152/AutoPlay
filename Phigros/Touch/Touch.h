@@ -23,15 +23,12 @@ using SFinger = std::shared_ptr<Finger>;
 using SEvent = std::shared_ptr<FingerEvent>;
 
 class Finger {
-    static inline std::atomic<int> curr_x = -1;
-    static inline std::atomic<int> curr_y = -1;
     
     bool isdown;
     uint16_t slot;
     TouchSrceen fd;
     
     std::vector<input_event> inputs;
-    static inline int g_slot{-1};
     static inline ThreadPool pool{FingerMaxNumber};
     static inline std::mutex* mutex{new std::mutex()};
   public:
@@ -41,9 +38,6 @@ class Finger {
     
     bool is_down() const noexcept { return isdown; }
     static Finger& bind_event(const SEvent& fevent, const SFinger& finger);
-    
-    int get_x() const;
-    int get_y() const;
 };
 
 class FingerEvent {
@@ -53,7 +47,6 @@ class FingerEvent {
     uint64_t time;
     bool m_is_run{false};
     int x1, y1;
-    std::atomic<bool> is_update{false};
     
     virtual ~FingerEvent();
     
@@ -64,7 +57,7 @@ class FingerEvent {
     void set_event2(const std::function<void()> &_event);
   public:
     virtual void run() = 0;
-    void set_touch(int _x, int _y);
+    virtual bool set_touch(int _x, int _y);
     
     FingerEvent& bind_finger(const SFinger& _finger);
     FingerEvent(uint64_t _time);
@@ -82,9 +75,11 @@ class Down : public FingerEvent {
 };
 
 class HoldDown : public FingerEvent {
+    std::atomic<bool> is_update{false};
   public:
     
     void run() override;
+    bool set_touch(int _x, int _y) override;
     
     HoldDown(uint64_t time = 0);
     ~HoldDown();

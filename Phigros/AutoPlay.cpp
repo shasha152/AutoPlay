@@ -256,7 +256,7 @@ bool AutoPlay::Play() {
             m_events.pop();
         }
     }
-    return !m_events.empty();
+    return !m_events.empty() || !m_hold_events.empty();
 }
 
 void AutoPlay::Destroy() {

@@ -89,14 +89,8 @@ int Create() {
 void Finger::down(int x, int y) {
     timeval time;
     gettimeofday(&time, 0);
-    {
-        std::unique_lock<std::mutex> lock{*mutex};
-        if(g_slot != slot) {
-	        inputs.emplace_back(input_event{time, EV_ABS, ABS_MT_SLOT, slot});
-	        g_slot = slot;
-	    }
-	}
-    inputs.emplace_back(input_event{time, EV_ABS, ABS_MT_TRACKING_ID, 0xF000 + slot});
+	inputs.emplace_back(input_event{time, EV_ABS, ABS_MT_SLOT, slot});
+    inputs.emplace_back(input_event{time, EV_ABS, ABS_MT_TRACKING_ID, slot});
     inputs.emplace_back(input_event{time, EV_ABS, ABS_MT_POSITION_X, x});
 	inputs.emplace_back(input_event{time, EV_ABS, ABS_MT_POSITION_Y, y});
 	
@@ -113,14 +107,7 @@ void Finger::down(int x, int y) {
 void Finger::up() {
     timeval time;
     gettimeofday(&time, 0);
-    
-    {
-        std::unique_lock<std::mutex> lock{*mutex};
-        if(g_slot != slot) {
-	        inputs.emplace_back(input_event{time, EV_ABS, ABS_MT_SLOT, slot});
-	        g_slot = slot;
-	    }
-	}
+	inputs.emplace_back(input_event{time, EV_ABS, ABS_MT_SLOT, slot});
     inputs.emplace_back(input_event{time, EV_ABS, ABS_MT_TRACKING_ID, -1});
     inputs.emplace_back(input_event{time, EV_SYN, SYN_REPORT, 0});
     {
@@ -139,15 +126,6 @@ Finger& Finger::bind_event(const SEvent& fevent, const SFinger& finger) {
         fevent->run();
     });
     return *finger;
-}
-
-int Finger::get_x() const {
-    return curr_x;
-}
-
-
-int Finger::get_y() const {
-    return curr_y;
 }
 
 SFinger CreateFinger(TouchSrceen fd, int slot) {

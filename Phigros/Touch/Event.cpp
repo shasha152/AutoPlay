@@ -59,7 +59,7 @@ void FingerEvent::set_event(const std::function<void(uint64_t)> &_event) {
         _event(clock);
     }
     m_is_run = false;
-    finger->up();
+    if(finger->is_down()) finger->up();
 }
 
 void FingerEvent::set_event2(const std::function<void()> &_event) {
@@ -70,17 +70,18 @@ void FingerEvent::set_event2(const std::function<void()> &_event) {
     start_clock();
     _event();
     m_is_run = false;
-    finger->up();
+    if(finger->is_down()) finger->up();
 }
 
-void FingerEvent::set_touch(int _x, int _y) {
-    if(x1 != _x || y1 != _y) {
+bool FingerEvent::set_touch(int _x, int _y) {
+    bool is_write = x1 != _x || y1 != _y;
+    if(is_write) {
         this->x1 = _x;
         this->y1 = _y;
-        is_update.store(true, std::memory_order_release);
     }
     
     m_is_run = true;
+    return is_write;
 }
 
 bool FingerEvent::is_run() const noexcept {
@@ -102,6 +103,13 @@ void HoldDown::run() {
             std::this_thread::sleep_for(std::chrono::milliseconds(3));
         }
     });
+}
+
+bool HoldDown::set_touch(int _x, int _y) {
+    bool res = FingerEvent::set_touch(_x, _y);
+    if(res) is_update.store(true, std::memory_order_release);
+    
+    return res;
 }
 
 void LerpMove::set_add_touch(int x_, int y_) {

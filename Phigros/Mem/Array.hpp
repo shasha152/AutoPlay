@@ -7,6 +7,7 @@ namespace Mem {
 
 namespace Il2cpp {
 
+//可以继承的容器
 template<typename T>
 class Array {
     using value_pointer = T*;
@@ -71,26 +72,34 @@ class Array {
     
     void resize(size_t size) {
         if(__capacity < size) {
-            __capacity = size;
-            
-            auto older_data = __data;
-            __data = new(std::nothrow) T[size]{};
-            if(__data == nullptr) throw std::runtime_error("Array : resize");
-            std::move(__data, __data + __size, older_data);
+            size_t old_size = __size;
+            T* older_data = __data;
+
+            __data = new(std::nothrow) T[size]{}; // 值初始化
+            if(!__data) throw std::runtime_error("Array: resize");
+
+            if(older_data) {
+                std::move(older_data, older_data + old_size, __data);
+                delete[] older_data;
+            }
             __size = size;
-            delete older_data;
+            __capacity = size;
         }
     }
-    
+
     void reserve(size_t size) {
         if(__capacity < size) {
+            size_t old_size = __size;
+            T* older_data = __data;
+
+            __data = static_cast<T*>(operator new(sizeof(T) * size));
+            if(!__data) throw std::runtime_error("Array: reserve");
+            if(older_data) {
+                std::move(older_data, older_data + old_size, __data);
+                for(size_t i = 0; i < old_size; ++i) older_data[i].~T();
+                operator delete(older_data);
+            }
             __capacity = size;
-            
-            auto older_data = __data;
-            __data = new(std::nothrow) T[size];
-            if(__data == nullptr) throw std::runtime_error("Array : reserve");
-            std::move(__data, __data + __size, older_data);
-            delete older_data;
         }
     }
     
